@@ -1,12 +1,22 @@
 import sys
 from loguru import logger
 
-from rapids_spark_nyc.log.RapidsSparkLogger import RapidsSparkLogger
 from rapids_spark_nyc.read.Reader import Reader
 from rapids_spark_nyc.spark_session.Spark import Spark
 from rapids_spark_nyc.write.Writer import Writer
 
-RapidsSparkLogger()
+
+logger.configure(
+    handlers=[
+        # dict(sink=sys.stderr, format="[{time}] {message}", backtrace=False, ),
+        dict(sink=sys.stdout, format="[{time}] {message}", backtrace=True, ),
+        dict(sink="resources/log/file.log", enqueue=True, serialize=True, backtrace=False, ),
+    ],
+    levels=[dict(name="NEW", no=13, icon="¤", color="")],
+    extra={"common_to_all": "default"},
+    patcher=lambda record: record["extra"].update(some_value=42),
+    activation=[("my_module.secret", False), ("another_library.module", False)],
+)
 
 
 def main():

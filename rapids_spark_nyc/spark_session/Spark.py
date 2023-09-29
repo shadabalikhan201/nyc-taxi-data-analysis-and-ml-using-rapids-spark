@@ -24,7 +24,7 @@ class Spark:
                 spark_config_jars += ',' + jars_directory + '/' + file
 
         logger.info('returning from Spark class __get_spark_config_jars() method')
-
+        print(spark_config_jars)
         return spark_config_jars
 
     @staticmethod
@@ -37,17 +37,17 @@ class Spark:
                                .config("spark.jars",
                                        Spark.__get_spark_config_jars(project_home + '/resources/dependency_jars'))
                                .config("spark.executor.resource.gpu.discoveryScript",
-                                       "resources/shell_scripts/getGpusResources.sh")
+                                       project_home + '/resources/shell_scripts/getGpusResources.sh')
                                .config("spark.plugins", "com.nvidia.spark.SQLPlugin")
                                .config("spark.rapids.sql.incompatibleOps.enabled", "true")
                                .config("spark.rapids.sql.enabled", "true")
                                .config("spark.rapids.gpu.resourceName", "GPU-9106a196-8414-4546-79fc-b6e893da9376")
-                               .config("spark.rapids.memory.gpu.allocFraction", "0.65")
-                               .config("spark.rapids.memory.gpu.maxAllocFraction", "0.9")
-                               .config("spark.rapids.memory.gpu.minAllocFraction", "0")
+                               .config("spark.rapids.memory.gpu.allocFraction", "0.35")
+                               .config("spark.rapids.memory.gpu.maxAllocFraction", "0.75")
+                               .config("spark.rapids.memory.gpu.minAllocFraction", "0.25")
                                .config("spark.rapids.memory.gpu.pool", "ASYNC")
                                .config("spark.dynamicAllocation.enabled", "false")
-                               .config("spark.executor.memory", "4g")
+                               .config("spark.executor.memory", "8g")
                                .config("spark.executor.resource.gpu.amount", "1")
                                .config("spark.sql.execution.arrow.pyspark.enabled", "true")
                                .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
@@ -68,7 +68,8 @@ class Spark:
                                .config("spark.rapids.sql.format.parquet.reader.type", "AUTO")
                                .config("spark.rapids.sql.explain", "NONE")
                                .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-                               .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+                               .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog"
+                                                                          ".DeltaCatalog")
                                .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
                                .config("spark.kryo.registrator", "com.nvidia.spark.rapids.GpuKryoRegistrator")
                                .config("spark.sql.warehouse.dir", "resources/output_dir/warehouse")
