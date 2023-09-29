@@ -1,27 +1,48 @@
 import sys
-#from com.isomode.rapids_spark_nyc.eda.Exploratory_Data_Analysis import Exploratory_Data_Analysis
+from loguru import logger
+
+from rapids_spark_nyc.log.RapidsSparkLogger import RapidsSparkLogger
+from rapids_spark_nyc.read.Reader import Reader
 from rapids_spark_nyc.spark_session.Spark import Spark
+from rapids_spark_nyc.write.Writer import Writer
+
+RapidsSparkLogger()
 
 
 def main():
-
+    logger.info('start of main() method')
     project_home = sys.argv[1]
-    print(project_home)
+    input_format = 'parquet'
+    header = True
+    input_dir = project_home + '/resources/input_files/'
 
-    glow_spark_session = Spark.get_spark_session(project_home)
-    '''try:
-        seq_df = File_Reader().read(glow_spark_session, project_home)
-        seq_df.createOrReplaceTempView('seq_df')
-        nucleotide_count_df = Exploratory_Data_Analysis().get_per_nucleotide_quality(seq_df)
-        nucleotide_count_df.createOrReplaceTempView('nucleotide_count_df')
-        Dashboard(project_home).get_dashboard_home('NomeDotBio', list([['fastq_sequence', 'seq_df'],['nucleotide_count', 'nucleotide_count_df']]))
+    spark_session = Spark.get_spark_session(project_home)
 
-    except NomeReadException:
-        raise NomeReadException
+    try:
+        taxi_df = Reader().read(spark_session, input_format, header, input_dir)
+
+        Writer().write(df=taxi_df, output_format="parquet", output_path="resources/output_dir/parquet"
+                                                                        "/yellow_tripdata_2023-01", mode="overwrite")
+        spark_session.sql("CREATE SCHEMA IF NOT EXISTS yellow_tripdata")
+        Writer().write(df=taxi_df, output_format="delta", output_path="yellow_tripdata.jan", mode="overwrite")
+
+        # nucleotide_count_df = Exploratory_Data_Analysis().get_per_nucleotide_quality(seq_df)
+        # nucleotide_count_df.createOrReplaceTempView('nucleotide_count_df')
+        # Dashboard(project_home).get_dashboard_home('NomeDotBio', list([['fastq_sequence', 'seq_df'], ['nucleotide_count', 'nucleotide_count_df']]))
+
+    except Exception as ex:
+        logger.exception('Exiting from the main() method due to exception')
+        raise ex
 
     finally:
-        Spark.destroy_spark_session()'''
+        Spark.destroy_spark_session()
+    logger.info('returning from main() method')
 
 
 if __name__ == '__main__':
-    main()
+    logger.info('start of the {} application'.format('Rapids_Spark_Nyc'))
+    try:
+        main()
+        logger.success('{} application ended successfully'.format('Rapids_Spark_Nyc'))
+    except Exception as ex:
+        logger.error('{} application ended with an exception'.format('Rapids_Spark_Nyc'))

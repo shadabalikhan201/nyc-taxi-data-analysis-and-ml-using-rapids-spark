@@ -1,5 +1,6 @@
 import os
 import findspark
+from loguru import logger
 from pyspark.sql import SparkSession
 from rapids_spark_nyc.utilities.SparkUtil import SparkUtil
 
@@ -9,6 +10,8 @@ class Spark:
 
     @staticmethod
     def __get_spark_config_jars(jars_directory: str) -> str:
+        logger.info('start of Spark class __get_spark_config_jars() method')
+
         files = os.listdir(jars_directory)
         print(files)
         spark_config_jars = ''
@@ -19,17 +22,22 @@ class Spark:
                 i += 1
             else:
                 spark_config_jars += ',' + jars_directory + '/' + file
+
+        logger.info('returning from Spark class __get_spark_config_jars() method')
+
         return spark_config_jars
 
     @staticmethod
     def __init_spark_session(project_home: str):
+        logger.info('start of Spark class __init_spark_session() method')
+
         findspark.init()
         if Spark.__session is None:
-            Spark.__session = (SparkSession.builder.appName("PySpark GPU HelloWorld").master("local")
+            Spark.__session = (SparkSession.builder.appName("NYC Taxi Data Analysis and ML App").master("local")
                                .config("spark.jars",
-                                       Spark.__get_spark_config_jars(project_home + '/resourcess/dependency_jars'))
+                                       Spark.__get_spark_config_jars(project_home + '/resources/dependency_jars'))
                                .config("spark.executor.resource.gpu.discoveryScript",
-                                       "resourcess/shell_scripts/getGpusResources.sh")
+                                       "resources/shell_scripts/getGpusResources.sh")
                                .config("spark.plugins", "com.nvidia.spark.SQLPlugin")
                                .config("spark.rapids.sql.incompatibleOps.enabled", "true")
                                .config("spark.rapids.sql.enabled", "true")
@@ -59,23 +67,29 @@ class Spark:
                                .config("spark.rapids.sql.format.parquet.reader.footer.type", "AUTO")
                                .config("spark.rapids.sql.format.parquet.reader.type", "AUTO")
                                .config("spark.rapids.sql.explain", "NONE")
-                               .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension,"
-                                                               "org.apache.iceberg.spark.extensions"
-                                                               ".IcebergSparkSessionExtensions")
-                               .config("spark.sql.catalog.spark_catalog",
-                                       "org.apache.spark.sql.delta.catalog.DeltaCatalog,"
-                                       "org.apache.iceberg.spark.SparkSessionCatalog")
+                               .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+                               .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
                                .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
                                .config("spark.kryo.registrator", "com.nvidia.spark.rapids.GpuKryoRegistrator")
+                               .config("spark.sql.warehouse.dir", "resources/output_dir/warehouse")
+                               .enableHiveSupport()
                                .getOrCreate())
+
+        logger.info('returning from Spark class __init_spark_session() method')
 
     @staticmethod
     @SparkUtil.returns_spark_session
     def get_spark_session(project_home: str) -> SparkSession:
+        logger.info('start of Spark class get_spark_session() method')
+
         Spark.__init_spark_session(project_home)
         Spark.__session.sparkContext._jvm.java.lang.String("x")
+
+        logger.info('returning from Spark class get_spark_session() method')
         return Spark.__session
 
     @staticmethod
     def destroy_spark_session():
+        logger.info('start of Spark class destroy_spark_session() method')
         Spark.__session.stop()
+        logger.info('returning from Spark class destroy_spark_session() method')

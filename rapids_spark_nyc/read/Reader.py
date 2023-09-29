@@ -1,13 +1,21 @@
+import sys
+
+from loguru import logger
+from pyspark.errors.exceptions.captured import AnalysisException
 from pyspark.sql import SparkSession
-from rapids_spark_nyc.exception.RapidsSparkException import NomeException
-from rapids_spark_nyc.exception.RapidsSparkReadException import NomeReadException
+from rapids_spark_nyc.exception.RapidsSparkReadException import RapidsSparkReadException
+
 from rapids_spark_nyc.utilities.SparkUtil import SparkUtil
 
 
-class File_Reader:
+class Reader:
+
+    def __init__(self):
+        logger.info('Reader class instantiation')
 
     @SparkUtil.returns_spark_dataframe
     def read(self, spark_session: SparkSession, input_format: str, header: bool, input_dir: str):
+        logger.info('start of Reader class read() method')
         df = None
         try:
             file_path = input_dir
@@ -18,13 +26,18 @@ class File_Reader:
                     reader = reader.option("header", True)
                 df = reader.parquet(file_path)
 
-        except NomeReadException:
-            raise (NomeException("RapidsSparkException, Failed in reading input files to dataframe"))
+        except AnalysisException as ex:
+            logger.exception(ex)
+            raise AnalysisException
+
+        logger.info('returning from Reader class read() method')
         return df
 
     @SparkUtil.returns_spark_dataframe
     def read_versioned(self, spark_session: SparkSession, input_format: str, version: int, time_stamp: str,
                        header: bool, input_dir: str):
+        logger.info('start of Reader class read_versioned() method')
+
         df = None
         try:
             file_path = input_dir
@@ -38,6 +51,9 @@ class File_Reader:
                     reader = reader.option('timestampAsOf', time_stamp)
                 df = reader.table(file_path)
 
-        except NomeReadException:
-            raise (NomeException("RapidsSparkException, Failed in reading input files to dataframe"))
+        except AnalysisException as ex:
+            logger.exception(ex)
+            raise AnalysisException
+
+        logger.info('returning from Reader class read_versioned() method')
         return df
