@@ -1,16 +1,16 @@
 import sys
 from loguru import logger
 
+from rapids_spark_nyc.dashboard.eda.Dashboard import Dashboard
 from rapids_spark_nyc.read.Reader import Reader
 from rapids_spark_nyc.spark_session.Spark import Spark
 from rapids_spark_nyc.write.Writer import Writer
-
 
 logger.configure(
     handlers=[
         # dict(sink=sys.stderr, format="[{time}] {message}", backtrace=False, ),
         dict(sink=sys.stdout, format="[{time}] {message}", backtrace=True, ),
-        dict(sink="resources/log/file.log", enqueue=True, serialize=True, backtrace=False, ),
+        dict(sink=sys.argv[1] + "/resources/log/file.log", enqueue=True, serialize=True, backtrace=False, ),
     ],
     levels=[dict(name="NEW", no=13, icon="¤", color="")],
     extra={"common_to_all": "default"},
@@ -27,14 +27,27 @@ def main():
     input_dir = project_home + '/resources/input_files/'
 
     spark_session = Spark.get_spark_session(project_home)
-
     try:
         taxi_df = Reader().read(spark_session, input_format, header, input_dir)
+        #spark_session.table('yellow_tripdata.jan').show()
+        # Writer().write(df=taxi_df, output_format="parquet", output_path="resources/output_dir/parquet"
+        #                                                                "/yellow_tripdata_2023-01", mode="overwrite")
 
-        Writer().write(df=taxi_df, output_format="parquet", output_path="resources/output_dir/parquet"
-                                                                        "/yellow_tripdata_2023-01", mode="overwrite")
         spark_session.sql("CREATE SCHEMA IF NOT EXISTS yellow_tripdata")
-        Writer().write(df=taxi_df, output_format="delta", output_path="yellow_tripdata.jan", mode="overwrite")
+        Writer().write(df=taxi_df, output_format="delta", output_path="yellow_tripdata.jan", mode="append")
+
+        # =============================
+
+        # df = Reader().read_versioned(spark, 'delta', header, 'yellow_tripdata.jan')
+        # taxi_df = Reader().read(spark, 'parquet', header, input_dir)
+        # taxi_df.show()
+        # Writer().write(df=taxi_df, output_format="parquet", output_path=output_dir+'/jan', mode="overwrite")
+        # spark.sql("CREATE SCHEMA IF NOT EXISTS yellow_tripdata")
+        # Writer().write(df=taxi_df, output_format="delta", output_path="yellow_tripdata.jan1", mode="overwrite")
+
+        Dashboard().get_dashboard_home('Radips_spark_nyc', list([['yellow_tripdata_jan', 'yellow_tripdata.jan']]))
+
+        # ================================
 
         # nucleotide_count_df = Exploratory_Data_Analysis().get_per_nucleotide_quality(seq_df)
         # nucleotide_count_df.createOrReplaceTempView('nucleotide_count_df')
