@@ -3,7 +3,6 @@ from typing import Optional
 from loguru import logger
 from pyspark.sql import SparkSession
 from pyspark.errors.exceptions.captured import AnalysisException
-from rapids_spark_nyc.exception.RapidsSparkReadException import RapidsSparkReadException
 from rapids_spark_nyc.utilities.SparkUtil import SparkUtil
 
 

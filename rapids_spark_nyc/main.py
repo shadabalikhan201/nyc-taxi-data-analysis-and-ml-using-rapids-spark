@@ -1,4 +1,6 @@
 import sys
+
+from delta import DeltaTable
 from loguru import logger
 
 from rapids_spark_nyc.dashboard.eda.Dashboard import Dashboard
@@ -28,24 +30,16 @@ def main():
 
     spark_session = Spark.get_spark_session(project_home)
     try:
-        taxi_df = Reader().read(spark_session, input_format, header, input_dir)
-        #spark_session.table('yellow_tripdata.jan').show()
-        # Writer().write(df=taxi_df, output_format="parquet", output_path="resources/output_dir/parquet"
-        #                                                                "/yellow_tripdata_2023-01", mode="overwrite")
+        #taxi_df = Reader().read(spark_session, input_format, header, input_dir)
 
-        spark_session.sql("CREATE SCHEMA IF NOT EXISTS yellow_tripdata")
-        Writer().write(df=taxi_df, output_format="delta", output_path="yellow_tripdata.jan", mode="append")
+        #Writer().write(df=taxi_df, output_format="parquet", output_path="resources/output_dir/parquet/yellow_tripdata_2023-01", mode="overwrite")
 
-        # =============================
+        #spark_session.sql("CREATE SCHEMA IF NOT EXISTS yellow_tripdata")
+        #Writer().write(df=taxi_df, output_format="delta", output_path="yellow_tripdata.jan", mode="append")
 
-        # df = Reader().read_versioned(spark, 'delta', header, 'yellow_tripdata.jan')
-        # taxi_df = Reader().read(spark, 'parquet', header, input_dir)
-        # taxi_df.show()
-        # Writer().write(df=taxi_df, output_format="parquet", output_path=output_dir+'/jan', mode="overwrite")
-        # spark.sql("CREATE SCHEMA IF NOT EXISTS yellow_tripdata")
-        # Writer().write(df=taxi_df, output_format="delta", output_path="yellow_tripdata.jan1", mode="overwrite")
+        #Reader().read_versioned(spark_session, 'delta', True, 'yellow_tripdata.jan').show(5)
 
-        Dashboard().get_dashboard_home('Radips_spark_nyc', list([['yellow_tripdata_jan', 'yellow_tripdata.jan']]))
+        Dashboard().get_dashboard_home('Radips_spark_nyc', [['yellow_tripdata_jan', 'yellow_tripdata.jan']])
 
         # ================================
 
