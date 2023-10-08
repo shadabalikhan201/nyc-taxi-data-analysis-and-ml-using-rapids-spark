@@ -1,9 +1,7 @@
-import sys
 from typing import Optional
 from loguru import logger
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, DataFrame
 from pyspark.errors.exceptions.captured import AnalysisException
-from rapids_spark_nyc.utilities.SparkUtil import SparkUtil
 
 
 class Reader:
@@ -11,8 +9,7 @@ class Reader:
     def __init__(self):
         logger.info('Reader class instantiation')
 
-    @SparkUtil.returns_spark_dataframe
-    def read(self, spark_session: SparkSession, input_format: str, header: bool, input_dir: str):
+    def read(self, spark_session: SparkSession, input_format: str, header: bool, input_dir: str) -> DataFrame:
         logger.info('start of Reader class read() method')
         df = None
         try:
@@ -31,9 +28,8 @@ class Reader:
         logger.info('returning from Reader class read() method')
         return df
 
-    @SparkUtil.returns_spark_dataframe
     def read_versioned(self, spark_session: SparkSession, input_format: str, header: bool, table_name: str,
-                       version: Optional[str] = None, time_stamp: Optional[str] = None):
+                       version: Optional[str] = None, time_stamp: Optional[str] = None) -> DataFrame:
 
         logger.info('start of Reader class read_versioned() method')
 

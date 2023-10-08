@@ -23,30 +23,11 @@ logger.configure(
 
 def main():
     logger.info('start of main() method')
-    project_home = sys.argv[1]
-    input_format = 'parquet'
-    header = True
-    input_dir = project_home + '/resources/input_files/'
 
+    project_home = sys.argv[1]
     spark_session = Spark.get_spark_session(project_home)
     try:
-        #taxi_df = Reader().read(spark_session, input_format, header, input_dir)
-
-        #Writer().write(df=taxi_df, output_format="parquet", output_path="resources/output_dir/parquet/yellow_tripdata_2023-01", mode="overwrite")
-
-        #spark_session.sql("CREATE SCHEMA IF NOT EXISTS yellow_tripdata")
-        #Writer().write(df=taxi_df, output_format="delta", output_path="yellow_tripdata.jan", mode="append")
-
-        #Reader().read_versioned(spark_session, 'delta', True, 'yellow_tripdata.jan').show(5)
-
         Dashboard().get_dashboard_home('Radips_spark_nyc', [['yellow_tripdata_jan', 'yellow_tripdata.jan']])
-
-        # ================================
-
-        # nucleotide_count_df = Exploratory_Data_Analysis().get_per_nucleotide_quality(seq_df)
-        # nucleotide_count_df.createOrReplaceTempView('nucleotide_count_df')
-        # Dashboard(project_home).get_dashboard_home('NomeDotBio', list([['fastq_sequence', 'seq_df'], ['nucleotide_count', 'nucleotide_count_df']]))
-
     except Exception as ex:
         logger.exception('Exiting from the main() method due to exception')
         raise ex
