@@ -1,35 +1,30 @@
 import sys
+import dash
 import pandas as pd
+from dash import html, Output, Input, State, dash_table, dcc
+from dash.dash_table import DataTable
+import dash_bootstrap_components as dbc
+from loguru import logger
+
 from rapids_spark_nyc.dashboard.DashApp import DashApp
 from rapids_spark_nyc.read.Reader import Reader
 from rapids_spark_nyc.spark_session.Spark import Spark
-import dash
-from dash.dash_table import DataTable
-from loguru import logger
-from dash import dash_table, html, dcc, Output, Input, State
-import dash_bootstrap_components as dbc
 
 
-class Dashboard:
+class DataTableDashboard:
     app = DashApp.get_dash_app()
+
+    def __init__(self):
+        pass
 
     global_batch_size = 100
     global_page_size = 25
     global_batch_number = 0
 
-    def __init__(self):
-        logger.info('Dashboard class object instantiation')
-
-    def get_dashboard_home(self, id: str, linked_dashboards: list[list[str]]):
-        logger.info('start of Dashboard class get_dashboard_home() method')
-        self.app.layout = self.homepage_layout(id, linked_dashboards)
-        self.app.run_server(debug=False)
-        logger.info('returning from Dashboard class get_dashboard_home() method')
-
-    def homepage_layout(self, id: str, linked_dashboards: list[list[str]]) -> html.Div:
+    def datatable_layout(self, id: str, linked_dashboards: list[list[str]]) -> html.Div:
         logger.info('start of Dashboard class homepage_layout() method')
 
-        home_layout = html.Div(id=id, children=[
+        layout = html.Div(id=id, children=[
             html.H1(id, id='nyc_taxidata_title'),
             html.Div(
                 id='nyc_dt',
@@ -39,8 +34,9 @@ class Dashboard:
                     dbc.Collapse(
                         children=[
                             dcc.Store(id='yellow_tripdata_jan_df',
-                                      data=Dashboard.__get_df_next_batch('yellow_tripdata.jan', 0,
-                                                                         Dashboard.global_batch_size).to_json(orient='split'),
+                                      data=DataTableDashboard.__get_df_next_batch('yellow_tripdata.jan', 0,
+                                                                                  DataTableDashboard.global_batch_size).to_json(
+                                          orient='split'),
                                       clear_data=False,
                                       storage_type='session'
                                       ),
@@ -58,7 +54,7 @@ class Dashboard:
             )
         ])
         logger.info('returning from Dashboard class homepage_layout() method')
-        return home_layout
+        return layout
 
     @app.callback(Output('yellow_tripdata_jan', 'data'),
                   Output('yellow_tripdata_jan_df', "data"),
@@ -69,19 +65,22 @@ class Dashboard:
                   State('page_before_transition', "data"))
     def update_nyc_dt(page_current, page_size, data, page_before_transition):
         logger.info('start of Dashboard class update_nyc_dt() callback method ==== : page number: ' + str(page_current))
-        batch_index = page_current % (Dashboard.global_batch_size // Dashboard.global_page_size)
+        batch_index = page_current % (DataTableDashboard.global_batch_size // DataTableDashboard.global_page_size)
         page_transition_type = ''
-        if (page_current - page_before_transition) > 0:# page transition towards next page ( lower to higher; eg: 2 to 3 ); page_transition_type = 'next'
+        if (
+                page_current - page_before_transition) > 0:  # page transition towards next page ( lower to higher; eg: 2 to 3 ); page_transition_type = 'next'
             logger.info('Inside Dashboard class update_nyc_dt() callback method for next case')
-            if batch_index == 0:# time to reload the df batch for next case
+            if batch_index == 0:  # time to reload the df batch for next case
                 if page_current != 0:
-                    Dashboard.global_batch_number = Dashboard.global_batch_number + 1
+                    DataTableDashboard.global_batch_number = DataTableDashboard.global_batch_number + 1
                     logger.info('Inside if block of if block of Dashboard class update_nyc_dt() callback method')
-                    batch_df = Dashboard.__get_df_next_batch('yellow_tripdata.jan',
-                                                             Dashboard.global_batch_number * Dashboard.global_batch_size,
-                                                             (Dashboard.global_batch_number + 1) * Dashboard.global_batch_size)
+                    batch_df = DataTableDashboard.__get_df_next_batch('yellow_tripdata.jan',
+                                                                      DataTableDashboard.global_batch_number * DataTableDashboard.global_batch_size,
+                                                                      (
+                                                                              DataTableDashboard.global_batch_number + 1) * DataTableDashboard.global_batch_size)
                     df = batch_df.iloc[
-                         batch_index * Dashboard.global_page_size: (batch_index + 1) * Dashboard.global_page_size]
+                         batch_index * DataTableDashboard.global_page_size: (
+                                                                                        batch_index + 1) * DataTableDashboard.global_page_size]
                 else:
                     logger.info('Inside else block of if block of Dashboard class update_nyc_dt() callback method')
                     batch_df = pd.read_json(data, orient='split')
@@ -92,26 +91,29 @@ class Dashboard:
                 batch_df = pd.read_json(data, orient='split')
                 # df = batch_df.iloc[(page_current - 1) * page_size: page_current * page_size]
                 df = batch_df.iloc[
-                     batch_index * Dashboard.global_page_size: (batch_index + 1) * Dashboard.global_page_size]
+                     batch_index * DataTableDashboard.global_page_size: (
+                                                                                    batch_index + 1) * DataTableDashboard.global_page_size]
 
-        else:# page transition towards previous page (higher to lower; eg: 3 to 2); page_transition_type = 'previous'
+        else:  # page transition towards previous page (higher to lower; eg: 3 to 2); page_transition_type = 'previous'
             logger.info('Inside Dashboard class update_nyc_dt() callback method for previous case')
 
-            if batch_index == 3:# time to reload the df batch for previous case
-                Dashboard.global_batch_number = Dashboard.global_batch_number - 1
+            if batch_index == 3:  # time to reload the df batch for previous case
+                DataTableDashboard.global_batch_number = DataTableDashboard.global_batch_number - 1
                 logger.info('Inside if block of Dashboard class update_nyc_dt() callback method for previous case')
-                batch_df = Dashboard.__get_df_next_batch('yellow_tripdata.jan',
-                                                         Dashboard.global_batch_number * Dashboard.global_batch_size,
-                                                         (
-                                                                 Dashboard.global_batch_number + 1) * Dashboard.global_batch_size)
+                batch_df = DataTableDashboard.__get_df_next_batch('yellow_tripdata.jan',
+                                                                  DataTableDashboard.global_batch_number * DataTableDashboard.global_batch_size,
+                                                                  (
+                                                                          DataTableDashboard.global_batch_number + 1) * DataTableDashboard.global_batch_size)
                 df = batch_df.iloc[
-                     batch_index * Dashboard.global_page_size: (batch_index + 1) * Dashboard.global_page_size]
+                     batch_index * DataTableDashboard.global_page_size: (
+                                                                                    batch_index + 1) * DataTableDashboard.global_page_size]
             else:
                 logger.info('Inside else block of Dashboard class update_nyc_dt() callback method for previous case')
                 batch_df = pd.read_json(data, orient='split')
                 # df = batch_df.iloc[(page_current - 1) * page_size: page_current * page_size]
                 df = batch_df.iloc[
-                     batch_index * Dashboard.global_page_size: (batch_index + 1) * Dashboard.global_page_size]
+                     batch_index * DataTableDashboard.global_page_size: (
+                                                                                    batch_index + 1) * DataTableDashboard.global_page_size]
 
         logger.info('returning from Dashboard class update_nyc_dt() callback method')
         return df.to_dict('records'), batch_df.to_json(orient='split'), page_current
@@ -140,16 +142,20 @@ class Dashboard:
             id1 = dashboard_data[0]
 
             if id1 == dataset_id:
-                current_page = 0 # current_page or page_current is always 1 less than page number.
-                batch_index = current_page % (Dashboard.global_batch_size // Dashboard.global_page_size)
-                df = Dashboard.__get_df_next_batch('yellow_tripdata.jan', 0, Dashboard.global_page_size) \
-                         .iloc[batch_index * Dashboard.global_page_size: (batch_index+1) * Dashboard.global_page_size]
+                current_page = 0  # current_page or page_current is always 1 less than page number.
+                batch_index = current_page % (
+                            DataTableDashboard.global_batch_size // DataTableDashboard.global_page_size)
+                df = DataTableDashboard.__get_df_next_batch('yellow_tripdata.jan', 0,
+                                                            DataTableDashboard.global_page_size) \
+                         .iloc[
+                     batch_index * DataTableDashboard.global_page_size: (
+                                                                                    batch_index + 1) * DataTableDashboard.global_page_size]
                 df_table = dash_table.DataTable(id=dataset_id,
                                                 data=df.to_dict('records'),
                                                 columns=[{"name": i, "id": i} for i in df.columns],
                                                 page_current=0,
-                                                page_size=Dashboard.global_page_size,
-                                                #page_count=Dashboard.__get_df_for_datatable('yellow_tripdata.jan').count()//page_size,
+                                                page_size=DataTableDashboard.global_page_size,
+                                                # page_count=DataTableDashboard.__get_df_for_datatable('yellow_tripdata.jan').count()//page_size,
                                                 page_action='custom')
                 break
         logger.info('returning from Dashboard class __get_individual_dataset_tables() method')
@@ -167,7 +173,7 @@ class Dashboard:
     @staticmethod
     def __get_df_next_batch(delta_table_nm: str, start_index: int, end_index: int) -> pd.DataFrame:
         logger.info('start of Dashboard class __get_df_next_batch() method')
-        df = Dashboard.__get_df_for_datatable(delta_table_nm)
+        df = DataTableDashboard.__get_df_for_datatable(delta_table_nm)
         df = df.iloc[start_index: end_index]
         logger.info('returning from Dashboard class __get_df_next_batch() method')
         return df

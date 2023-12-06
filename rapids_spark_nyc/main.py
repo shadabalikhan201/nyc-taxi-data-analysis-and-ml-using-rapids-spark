@@ -3,7 +3,7 @@ import sys
 from delta import DeltaTable
 from loguru import logger
 
-from rapids_spark_nyc.dashboard.eda.Dashboard import Dashboard
+from rapids_spark_nyc.dashboard.eda.EdaHomeDashboard import EdaDashboard
 from rapids_spark_nyc.read.Reader import Reader
 from rapids_spark_nyc.spark_session.Spark import Spark
 from rapids_spark_nyc.write.Writer import Writer
@@ -27,7 +27,11 @@ def main():
     project_home = sys.argv[1]
     spark_session = Spark.get_spark_session(project_home)
     try:
-        Dashboard().get_dashboard_home('Radips_spark_nyc', [['yellow_tripdata_jan', 'yellow_tripdata.jan']])
+        df = Reader().read(spark_session, 'parquet', True, '/home/optimus_prime/PycharmProjects/nyc-taxi-rapids-spark/resources/input_files/yellow_tripdata_2023-01.parquet')
+
+        spark_session.sql("CREATE SCHEMA IF NOT EXISTS yellow_tripdata")
+        Writer().write(df, 'delta', 'yellow_tripdata.jan', 'overwrite')
+        EdaDashboard().get_dashboard_home('Radips_spark_nyc', [['yellow_tripdata_jan', 'yellow_tripdata.jan']])
     except Exception as ex:
         logger.exception('Exiting from the main() method due to exception')
         raise ex

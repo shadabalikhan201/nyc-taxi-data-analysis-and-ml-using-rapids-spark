@@ -33,7 +33,7 @@ class Spark:
         findspark.init()
         if Spark.__session is None:
             Spark.__session = configure_spark_with_delta_pip(
-                (SparkSession.builder.appName("NYC Taxi Data Analysis and ML App").master("local")
+                (SparkSession.builder.appName("NYC Taxi Data Analysis and ML App").master("local[*]")
                  .config("spark.jars",
                          Spark.__get_spark_config_jars(project_home + '/resources/dependency_jars'))
                  .config("spark.executor.resource.gpu.discoveryScript",

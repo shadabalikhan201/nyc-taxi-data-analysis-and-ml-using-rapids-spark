@@ -1,7 +1,6 @@
 import flask
 from dash import Dash
 from loguru import logger
-from rapids_spark_nyc.utilities.DashboardUtil import DashboardUtil
 
 
 class DashApp:
@@ -18,8 +17,7 @@ class DashApp:
         logger.info('returning from DashApp class __init_dash_app() method')
 
     @staticmethod
-    @DashboardUtil.returns_dash_app
-    def get_dash_app():
+    def get_dash_app() -> Dash:
         logger.info('start of DashApp class get_dash_app() method')
         DashApp.__init_dash_app()
         logger.info('returning from DashApp class get_dash_app() method')
