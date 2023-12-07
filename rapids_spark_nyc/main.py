@@ -1,8 +1,25 @@
+"""
+This script handles the end to end orchestration of the application for the 'nyc-taxi-rapids-spark' project.
+The implementation uses the loguru library for logging various stages and exceptions in the application,
+
+The main method is where the high-level orchestration of the application occurs. It initializes a Spark
+session, uses a `Reader` class to read Parquet file data, creates a SQL schema, writes out the resultant
+DataFrame in 'delta' format, and initializes an EDA dashboard. The Spark session is terminated at the end,
+and any exceptions are logged and propagated.
+
+Furthermore, the `__name__ == '__main__'` block ensures that the code is executed only when the script
+is run directly, not when imported as a module. It runs the `main` method and logs the start, successful
+completion, or failure of the application.
+
+Functions
+---------
+main():
+    Orchestrates the process involving the creation of a Spark session, data reading and writing,
+    schema generation, and dashboard setup.
+"""
+
 import sys
-
-from delta import DeltaTable
 from loguru import logger
-
 from rapids_spark_nyc.dashboard.eda.EdaHomeDashboard import EdaDashboard
 from rapids_spark_nyc.read.Reader import Reader
 from rapids_spark_nyc.spark_session.Spark import Spark
@@ -22,10 +39,31 @@ logger.configure(
 
 
 def main():
+    """
+    The main method from where the execution of the project begins.
+
+    Parameters
+    ----------
+    None
+
+    Returns
+    -------
+    None
+
+    Raises
+    ------
+    Exception
+        If an exception occurs during the execution of the method, it logs it and re-raises it.
+
+    Notes
+    -----
+    The spark session is created in this method using the `get_spark_session` method of the Spark class. The relative paths of the data files are hard-coded in this method.
+    """
     logger.info('start of main() method')
 
     project_home = sys.argv[1]
     spark_session = Spark.get_spark_session(project_home)
+
     try:
         df = Reader().read(spark_session, 'parquet', True, '/home/optimus_prime/PycharmProjects/nyc-taxi-rapids-spark/resources/input_files/yellow_tripdata_2023-01.parquet')
 

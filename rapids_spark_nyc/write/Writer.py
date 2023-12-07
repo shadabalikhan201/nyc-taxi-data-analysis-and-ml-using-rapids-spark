@@ -4,12 +4,35 @@ from pyspark.sql import DataFrame, DataFrameWriter
 
 
 class Writer:
+    """
+    Class for writing DataFrame to different output formats.
+
+    Attributes
+    ----------
+    None
+
+    Methods
+    -------
+    __init__() :
+        Initialize the Writer class.
+
+    write(df : DataFrame, output_format : str, output_path : str, mode : Optional[str], partition_by : Union[str, list[str], None], compression : Optional[str], df_writer_options : Optional[dict])
+        Write the DataFrame to the specified output format.
+
+    write_parquet(df_writer : DataFrameWriter, output_path : str, mode : Optional[str], partition_by : Union[str, list[str], None], compression : Optional[str])
+        Write the DataFrame to Parquet format.
+
+    create_delta_table(df_writer : DataFrameWriter, output_path : str, mode : Optional[str], df_writer_options : Optional[dict])
+        Create a Delta table from the DataFrame.
+
+    """
     def __init__(self):
         logger.info('Writer class instantiation')
 
     def write(self, df: DataFrame, output_format: str, output_path: str, mode: Optional[str] = None,
               partition_by: Union[str, list[str], None] = None, compression: Optional[str] = None,
               df_writer_options: Optional[dict] = None):
+
         logger.info('start of Writer class write() method')
 
         df_writer = df.write
@@ -25,7 +48,39 @@ class Writer:
 
     def write_parquet(self, df_writer: DataFrameWriter, output_path: str, mode: Optional[str] = None,
                       partition_by: Union[str, list[str], None] = None, compression: Optional[str] = None):
+        """
+        Write the DataFrame to Parquet format.
 
+        This method will attempt to write the DataFrame to a Parquet file format
+        with the option to set the mode, partitioning and compression for the file.
+
+        Parameters
+        ----------
+        df_writer : DataFrameWriter
+            The writer object from a PySpark DataFrame.
+
+        output_path : str
+            The directory path for saving the file.
+
+        mode : str, optional
+            Specifies the saving mode. Default is None.
+
+        partition_by : str or list, optional
+            Specifies columns to partition the DataFrame. Default is None.
+
+        compression : str, optional
+            Specifies compression type: 'none', 'uncompressed', 'snappy',
+            'gzip', 'lzo', 'brotli', 'lz4', or 'zstd'. Default is None.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        Exception
+            If it fails to create the Delta table, it will raise an Exception.
+        """
         logger.info('start of Writer class write_parquet() method')
 
         if mode is not None:
@@ -44,7 +99,35 @@ class Writer:
 
     def create_delta_table(self, df_writer: DataFrameWriter, output_path: str, mode: Optional[str] = None,
                            df_writer_options: Optional[dict] = None):
+        """
+        Create a Delta table from the DataFrame.
 
+        This method will attempt to write the DataFrame into a Delta table that is
+        saved in the specified Spark Warehouse dir with an optional mode and additional options.
+
+        Parameters
+        ----------
+        df_writer : DataFrameWriter
+            The writer object from a PySpark DataFrame.
+
+        output_path : str
+            The directory path for saving the file.
+
+        mode : str, optional
+            Specifies the saving mode. If 'overwrite', the 'overwriteSchema' option is set to True. Default is None.
+
+        df_writer_options : dict, optional
+            Additional options to be passed to 'df_writer.option()'. Default is None.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        Exception
+            If it fails to create the Delta table, it will raise an Exception.
+        """
         logger.info('start of Writer class create_delta_table() method')
 
         if mode is not None:
