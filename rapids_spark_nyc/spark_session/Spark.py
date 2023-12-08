@@ -19,7 +19,7 @@ class Spark:
 
     Methods
     -------
-    __get_spark_config_jars(jars_directory: str) -> str
+    __generate_jar_paths(jars_directory: str) -> str
         Constructs a comma-separated string of paths to all jar files in a given directory.
 
     __init_spark_session(project_home: str)
@@ -34,7 +34,7 @@ class Spark:
     __session = None
 
     @staticmethod
-    def __get_spark_config_jars(jars_directory: str) -> str:
+    def __generate_jar_paths(jars_directory: str) -> str:
         """
         This static and private method constructs a comma-separated string of paths to all extra dependency jar files in a given directory.
 
@@ -53,25 +53,20 @@ class Spark:
         -------
         str
             A comma separated string of the paths to all jar files in the given directory.
-
-        Notes
-        -----
-        This method logs the start and end of its execution to facilitate debugging and performance measurement.
         """
-        logger.info('start of Spark class __get_spark_config_jars() method')
-
-        files = os.listdir(jars_directory)
-        spark_config_jars = ''
-        i = 0
-        for file in files:
-            if i == 0:
-                spark_config_jars += jars_directory + '/' + file
-                i += 1
-            else:
-                spark_config_jars += ',' + jars_directory + '/' + file
-
-        logger.info('returning from Spark class __get_spark_config_jars() method')
-        return spark_config_jars
+        logger.info('start of Spark class generate_jar_paths() method')
+        try:
+            spark_config_jars = ''
+            if os.path.isdir(jars_directory):
+                files = os.listdir(jars_directory)
+                logger.info('Generating jar paths from the directory {}'.format(jars_directory))
+                jars = [os.path.join(jars_directory, file) for file in files if file.endswith('.jar')]
+                spark_config_jars = ','.join(jars)
+            logger.info('returning from Spark class generate_jar_paths() method')
+            return spark_config_jars
+        except OSError as e:
+            logger.exception('Error occurred while listing files in directory: {}, details: {}'.format(jars_directory, str(e)))
+            raise e
 
     @staticmethod
     def __init_spark_session(project_home: str):
@@ -89,13 +84,6 @@ class Spark:
         Returns
         -------
         None
-            This method doesn't return anything, it initializes the `__session` static variable.
-
-        Notes
-        -----
-        The `findspark` package is used to find and initiate Spark.
-        This method sets up a number of spark configurations necessary for enabling Spark-Rapids, Delta and HiveMetaStore supports. Be careful when changing them as they could break your application.
-        Its intention is to be called once to set Spark up, so repeated calls won't have any effect.
         """
         logger.info('start of Spark class __init_spark_session() method')
 
@@ -104,7 +92,7 @@ class Spark:
             Spark.__session = configure_spark_with_delta_pip(
                 (SparkSession.builder.appName("NYC Taxi Data Analysis and ML App").master("local[*]")
                  .config("spark.jars",
-                         Spark.__get_spark_config_jars(project_home + '/resources/dependency_jars'))
+                         Spark.__generate_jar_paths(project_home + '/resources/dependency_jars'))
                  .config("spark.executor.resource.gpu.discoveryScript",
                          project_home + '/resources/shell_scripts/getGpusResources.sh')
                  .config("spark.plugins", "com.nvidia.spark.SQLPlugin")
@@ -122,7 +110,6 @@ class Spark:
                  .config("spark.sql.execution.arrow.pyspark.enabled", "true")
                  .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "true")
                  .config("spark.sql.execution.arrow.pyspark.selfDestruct.enabled", "true")
-                 .config("spark.sql.execution.arrow.pyspark.enabled", "false")
                  .config("spark.rapids.sql.exec.CollectLimitExec", "true")
                  .config('spark.driver.maxResultSize', '4g')
                  .config("spark.sql.inMemoryColumnarStorage.batchSize", "200000")
@@ -140,8 +127,8 @@ class Spark:
                  .config("spark.rapids.sql.explain", "NONE")
                  .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
                  .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-                 #.config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-                 #.config("spark.kryo.registrator", "com.nvidia.spark.rapids.GpuKryoRegistrator")
+                 .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+                 .config("spark.kryo.registrator", "com.nvidia.spark.rapids.GpuKryoRegistrator")
                  .config("spark.sql.warehouse.dir", project_home + "/resources/output_dir/warehouse")
                  )).enableHiveSupport().getOrCreate()
 
@@ -166,10 +153,6 @@ class Spark:
         -------
         SparkSession
             The initialized SparkSession object.
-
-        Notes
-        -----
-        This method logs the start and end of its execution to facilitate debugging and performance measurement.
         """
 
         logger.info('start of Spark class get_spark_session() method')
@@ -194,12 +177,6 @@ class Spark:
         Returns
         -------
         None
-
-        Notes
-        -----
-        The Spark session is stopped by calling the `stop()` method on it. After the session is stopped,
-        the cluster resources allocated to the application are freed. Call this method after all the Spark processing
-        is completed.
         """
         logger.info('start of Spark class destroy_spark_session() method')
         Spark.__session.stop()
